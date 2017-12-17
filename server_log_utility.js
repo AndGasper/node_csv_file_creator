@@ -1,5 +1,6 @@
 var fs = require('fs'); // File system for writing to log file 
 var util = require('util'); // For formatting the log messages
+// var logStdout = process.stdout;
 
 // Common Log Format: host ident authuser date request status bytes
 /**
@@ -86,10 +87,15 @@ module.exports = {
     logRequest: function() {
         
         
-        const {url, method}  = arguments[0];
+        const {headers}  = arguments[0];
+        // console.log('headers:', headers);
+        
+        // console.log('url:', url); 
+        // console.log('method:', method);
+        // console.log('host:', host);
         const accessLogFields = {
-            'host': arguments[0],
-            'ident': '',
+            'host': `${headers['host']}`,
+            'ident': `${headers['user-agent']}`,
             'authuser': '',
             'date': this.commonLogFormatTimestamp(new Date()),
             'request': '',
