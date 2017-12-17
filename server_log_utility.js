@@ -18,52 +18,75 @@ module.exports = {
     this.debug_console_log_file.write(`${util.format.apply(null, arguments)}\n`);
     // this.logStdOut.write(`${util.format.apply(null, arguments)}\n`);
     },
-    logRequest: function() {
-        /**
-         *  Is my use of getMethodName potentially misleading? 
-         *  I hadn't really thought through whether or not these were really getters or setters
-         *  So, for now, don't read any deeper into the names 
-         */
+
+    commonLogFormatTimestamp: function(date) {
+        // Common Log Format: host ident authuser date request status bytes
+        // YYYY-MM-DD:HH:mm:ss +/- nnnn
+        // nnnn = time zone offet
+        let YYYY = date.getFullYear();
+        // JavaScript's date library has the months of the year running from 0-11, e.g. January = 0
+        // That feel when the memes are too real
+        let MM = date.getMonth()+1; 
+        let DD = date.getDate(); 
+        let HH = date.getHours(); 
+        let mm = date.getMinutes();
+        let ss = date.getSeconds();
         
-         // There may be an argument to making this a getter and a setter, so it'd be like:
-         // Date.prototype.commonLogFormatTimestamp = [YYYY:MM:DD:HH:mm:ss +/- {timezone 4 digit code}]
-         // Date.prototype.setCommonLogFormatTimestamp = // do all the string building stuff 
-         // then when I go to assign it in accessLogFields.date I go new Date().getCommonLogFormatTimestamp()
-         // And just add something to either make it so that on new Date() setCommonLogFormatTimestamp is always invoked, 
-         // or I have the getter call the setter? 
-         // ^ That just seems weird though because if the getter can always call the setter, what's the point?
-
-        this.commonLogFormatTimestamp = function() {
-            // YYYY-MM-DD:HH:mm:ss +/- nnnn
-            let YYYY = this.getFullYear();
-            // JavaScript's date library has the months of the year running from 0-11, e.g. January = 0
-            // That feel when the memes are too real
-            this.MM = this.getMonth()+1; 
-            this.DD = this.getDate(); 
-            this.HH = this.getHours(); 
-            this.mm = this.getMinutes();
-
-            
-            
-            MM = (MM < 10) ? `0${MM}` : `${MM}`; // If the month is less than 10, then prefix '0' for consistent MM date format
-
-            
-            DD = (DD < 10) ? `0${DD}` : `${DD}`; // If the day is less than 10s, then prefix '0' for consistent DD date format
-
-            
-            HH = (HH < 10) ? `0${HH}` : `${HH}`; // If the hour is less 
-
-            // Which is more expensive: a variable assignment or two invocations of getMinutes? 
-            // Or, is there a non-trivial probability that this.getMinutes() will return two different values in this time frame? 
-            // let mm = (this.getMinutes() < 10) ? `0${this.getMinutes()}` : `${this.getMinutes()}`;
-            
-            
 
 
-            return `${YYYY}-${MM}-${DD}`;
+        // console.log(`date.toTimeString(): ${date.toTimeString()}`);
+
+        // dateObj.getTimeZoneOffset method returns a number representing the time-zone offset from UTC, in minutes, for the fdate based on current host system settings
+        let timeZoneOffset = {
+            // 'inHours': date.getTimeZoneOffset()/60
+            'inHours': parseInt(date.toTimeString().slice(13,17))/100
+        }; 
+        timeZoneOffset.isInteger = timeZoneOffset.inHours % 1 === 0; 
+        timeZoneOffset.isPositive = timeZoneOffset.inHours >= 0; // > || = to allow for the possibility that its UTC 0000
+
+        // Convert the numeric type to a string, and prefix any time values less than 10 with a leading 0 to maintain two sig. fig. format
+        MM = (MM < 10) ? `0${MM}` : `${MM}`; 
+        DD = (DD < 10) ? `0${DD}` : `${DD}`; 
+        HH = (HH < 10) ? `0${HH}` : `${HH}`; 
+        mm = (mm < 10) ? `0${mm}` : `${mm}`; 
+        ss = (ss < 10) ? `0${ss}` : `${ss}`;
+
+        // There's a switch/case statement for this situation, but I'm tired.
+
+        // Is the number value an integer and is it positive?
+        if (timeZoneOffset.isInteger) {
+            // If the timeZoneOffset.inHours is less than 10 but greater than 0 
+            if (timeZoneOffset.isPositive) {
+                timeZoneOffset.inHoursString = (timeZoneOffset.inHours < 10) ?  `+0${timeZoneOffset.inHours}00` : `+${timeZoneOffset.inHours}00`;  
+            } else {
+               // the number is negative but still an integer; Better phrasing? - The number is an integer and negative   
+               // A two digit negative hour value greater than 10 will already have the -, so there is no need to add it.
+               timeZoneOffset.inHoursString = (timeZoneOffset.inHours < 10) ?  `-0${timeZoneOffset.inHours}00` : `${timeZoneOffset.inHours}00`; 
+            }
+        } else {
+            // the hours value is not an integer 
+            if (timeZoneOffset.isPositive) {
+                // Can still be positive though, e.g. 3.5
+                // the isPositive seems a little silly now considering x < 0 && x < 10 would work 
+               if  (timeZoneOffset.inHours < 10) {
+                   let timeZoneString = String(timeZoneOffset.inHour);
+                   timeSetOffset.inHoursString = (timeZoneString[2] === '5') ? `+0${timeZoneString[0]}30` : `+0${timeZoneString[0]}45`;    
+               } else {
+                   // Still in positive float land, but for 2-digit values, 10-14, Still need to address the x:30 and x:45 cases 
+                let timeZoneString = String(timeZoneOffset.inHourz);
+                timeSetOffset.inHoursString = (timeZoneString[2] === '5') ? `+${timeZoneString[0]}30` : `+${timeZoneString[0]}45`;    
+               }
+            }
         }
 
-        const {url, method, }
+        const commonLogFormatTimestampString  = `[${YYYY}-${MM}-${DD}:${HH}:${mm}:${ss}]`;
+        return commonLogFormatTimestampString;
+    },
+
+    logRequest: function() {
+        
+        
+        const {url, method}  = arguments[0];
         const accessLogFields = {
             'host': arguments[0],
             'ident': '',
@@ -73,20 +96,9 @@ module.exports = {
             'status': '',
             'bytes': ''
         };
-        
-        
-        // Common Log Format: host ident authuser date request status bytes
-        const commonLogFormatAccessLogFields = function() {
-            let message = `${date} - $`
-            return message; 
-        } 
-
-
-
-        const message = `${accessLogFields}`
-        
-        
-        this.access_log_file.write(util.format.apply(null, mesage));
+    
+        const message = `${accessLogFields.date} `;
+        this.access_log_file.write(util.format.apply(null, arguments, message));
     }
 
 }

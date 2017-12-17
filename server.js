@@ -7,6 +7,7 @@ const server = http.createServer((request, response) => {
     const userAgent = headers['user-agent'];
     
     serverLogUtility.logRequest(request); // I'm not sure how scalable this is, but it seems like there should be a more clever way to make sure that serverLog.logRequest is always given request
+    serverLogUtility.consoleLog(json_encode(request));
 
     switch(method) {
         case('POST'):
@@ -28,7 +29,9 @@ const server = http.createServer((request, response) => {
 
         default:
             serverLogUtility.consoleLog(`Not a post request`);
+            serverLogUtility.consoleLog(request); 
             // console.log('Not a post request');
+
     }
 
 });
