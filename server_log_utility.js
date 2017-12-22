@@ -104,7 +104,7 @@ module.exports = {
         };
     
         const message = `${accessLogFields.date} `;
-        this.access_log_file.write(util.format.apply(null, arguments, message));
+        this.access_log_file.write(util.format.apply(null, arguments));
     }
 
 }

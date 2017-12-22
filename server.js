@@ -2,6 +2,7 @@ const serverLogUtility = require('./server_log_utility');
 const http = require('http');
 const PORT = '3005';
 
+
 const server = http.createServer((request, response) => {
     const {headers, method, url} = request; // Pull off the headers, method, and url of the request
     const userAgent = headers['user-agent'];
@@ -22,14 +23,32 @@ const server = http.createServer((request, response) => {
                 // console.log(`chunk: ${chunk}`);
                 body.push(chunk);
             }).on('end', () => {
+
+                // I'm sending myself saw application/json through Postman with with the raw option set. the form version was weird
+                let bodyJson = JSON.parse(body.toString().trim());
+                serverLogUtility.consoleLog(`bodyJson: ${bodyJson}`);
+
                 body = Buffer.concat(body).toString();
+                
                 serverLogUtility.consoleLog(`body: ${body}`);
+
+                response.statusCode = 200; 
+                response.setHeader('Content-Type', 'application/json');
+
+                const responseBody = {headers, method, url, body};
+
+                response.write(JSON.stringify(responseBody));
+                response.end();
+
+
+
+
             });
             break;
 
         default:
             serverLogUtility.consoleLog(`Not a post request`);
-            serverLogUtility.consoleLog(request); 
+            // serverLogUtility.consoleLog(request); 
             // console.log('Not a post request');
 
     }
