@@ -102,9 +102,26 @@ module.exports = {
             'status': '',
             'bytes': ''
         };
+        // console.log(accessLogFields);
+        /**
+         * { host: 'localhost:3005',
+            ident: 'PostmanRuntime/7.1.1',
+            authuser: '',
+            date: '[2017-12-22:17:56:36]',
+            request: '',
+            status: '',
+            bytes: '' 
+        }
+
+         */
+        
     
-        const message = `${accessLogFields.date} `;
-        this.access_log_file.write(util.format.apply(null, arguments));
+        // const message = `${accessLogFields.date} `;
+        // Interestingly enough, passing a string templated value to util.format.apply throws an error
+        // TypeError: CreateListFromArrayLike called on non-object
+        // this.debug_console_log_file.write(`${util.format.apply(null, arguments)}\n`);
+        this.access_log_file.write(`${util.format.apply(null, accessLogFields)}\n`);
+        console.log(this.access_log_file); 
     }
 
 }

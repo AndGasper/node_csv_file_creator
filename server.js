@@ -8,7 +8,8 @@ const server = http.createServer((request, response) => {
     const userAgent = headers['user-agent'];
     
     serverLogUtility.logRequest(request); // I'm not sure how scalable this is, but it seems like there should be a more clever way to make sure that serverLog.logRequest is always given request
-    serverLogUtility.consoleLog(request);
+    
+    // serverLogUtility.consoleLog(request);
 
     switch(method) {
         case('POST'):
@@ -54,6 +55,10 @@ const server = http.createServer((request, response) => {
     }
 
 });
+
+// server.on('request', (request) => {
+//     serverLogUtility.logRequest(request);
+// });
 
 server.listen(PORT, () => {
     console.log(`Listening on: ${PORT}`);
