@@ -12,7 +12,7 @@ var util = require('util'); // For formatting the log messages
 module.exports = {
     debug_console_log_file:  fs.createWriteStream(`${__dirname}/logs/debug.log`, {flags: 'a'}),
     access_log_file: fs.createWriteStream(`${__dirname}/logs/access.log`, {flags: 'a'}),
-
+    
     consoleLog: function() {
     // Write to the log file
     // Use apply(null, arguments) to 
@@ -88,19 +88,15 @@ module.exports = {
         
         
         const {headers}  = arguments[0];
-        // console.log('headers:', headers);
-        
-        // console.log('url:', url); 
-        // console.log('method:', method);
-        // console.log('host:', host);
+        // console.log(arguments);
         const accessLogFields = {
             'host': `${headers['host']}`,
             'ident': `${headers['user-agent']}`,
-            'authuser': '',
+            'authuser': '-',
             'date': this.commonLogFormatTimestamp(new Date()),
-            'request': '',
-            'status': '',
-            'bytes': ''
+            'request': '-',
+            'status': '-',
+            'bytes': '-'
         };
         // console.log(accessLogFields);
         /**
@@ -114,14 +110,23 @@ module.exports = {
         }
 
          */
+
+
+
         
-    
+        // console.log(this.access_log_file);
+        // console.log(accessLogFields);
         // const message = `${accessLogFields.date} `;
         // Interestingly enough, passing a string templated value to util.format.apply throws an error
         // TypeError: CreateListFromArrayLike called on non-object
         // this.debug_console_log_file.write(`${util.format.apply(null, arguments)}\n`);
-        this.access_log_file.write(`${util.format.apply(null, accessLogFields)}\n`);
-        console.log(this.access_log_file); 
+        // Yeah, I don't think I am hitting the high water mark for the accessLogFields. 
+        // console.log('arguments', arguments);
+
+        // Common Log Format: host ident authuser date request status bytes
+        const message = `${accessLogFields.date} ${accessLogFields.host} ${accessLogFields.ident}`; 
+        this.access_log_file.write(`${message}\n`);
+        // console.log(this.access_log_file); 
     }
 
 }
