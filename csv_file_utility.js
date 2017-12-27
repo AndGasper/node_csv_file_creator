@@ -23,7 +23,7 @@ module.exports = {
         
         let quote = JSON.parse(data.quote);
         // I'm too lazy right now to deal with having the , inside the data, so for now, I'll cheat and use the easiest ones
-        let formattedData = `${quote.time.updatedISO}, ${quote.bpi.USD.rate_float}, ${data.source}`;
+        let formattedData = `${quote.time.updatedISO}, ${quote.bpi.USD.rate_float}, ${data.source} \n\t`;
         
         return formattedData; 
 
