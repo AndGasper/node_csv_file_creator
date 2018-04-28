@@ -39,12 +39,13 @@ function readFileData(filePath, fileDescriptor) {
 	// ASSUMPTION: A file only has one set of headers
 	// But potentially, many sets of values
 
-	const data = Object.assign(CsvFileData);
+	const data = Object.assign(CsvFileData); // Mostly because I can't figure out getters/setters at the moment using function CsvFileData() notation
 
 	fileStream.on('data', (chunk) => {
 		// WARNING: Pretty sure it's just happenstance that 1 chunk = both lines of the file 
 		let rawChunk = chunk;
-		let carriageReturnTrimmedChunk = rawChunk.trim('\r\n'); //  ASSUME: trimming a trailing carriage return is okay
+		//  ASSUME: trimming a trailing carriage return is okay
+		let carriageReturnTrimmedChunk = rawChunk.trim('\r\n'); 
 		let line = carriageReturnTrimmedChunk.split('\r\n');
 		// console.log('line', line);
 		line.map((item, index) => {
@@ -66,10 +67,10 @@ function readFileData(filePath, fileDescriptor) {
 	});
 
 	fileStream.on('end', function() {
-		console.log('data', data);
+		// console.log('data', data);
 		console.log('end'); 
 		// console.log(data.getHeaderValue('User name'));
-		console.log('Object.keys(data.headers)', Object.keys(data.headers));
+		// console.log('Object.keys(data.headers)', Object.keys(data.headers));
 		let a = data.getAssociatedHeadersAndValues(Object.keys(data.headers)); 
 		console.log('a', a);
 	});
@@ -92,7 +93,7 @@ const CsvFileData = {
 			}
 		},
 		values: {
-			setFormattedValuesAndIndex(value) {
+			set setFormattedValuesAndIndex(value) {
 				return this[value.index] = value.dataValue; // didn't want to use value.value
 			}
 		},
@@ -107,7 +108,7 @@ const CsvFileData = {
 		getAssociatedHeadersAndValues(headers) {
 			const headerKeyValuePairs = {}
 			headers.map((header) => {
-				headerKeyValuePairs.item = this.getHeaderValue(header);
+				headerKeyValuePairs[header] = this.getHeaderValue(header);
 			});
 			return headerKeyValuePairs;
 		}
