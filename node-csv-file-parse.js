@@ -69,16 +69,17 @@ function readFileData(filePath, fileDescriptor) {
 	fileStream.on('end', function() {
 		// console.log('data', data);
 		console.log('end'); 
-		// console.log(data.getHeaderValue('User name'));
-		// console.log('Object.keys(data.headers)', Object.keys(data.headers));
-		let a = data.getAssociatedHeadersAndValues(Object.keys(data.headers)); 
-		console.log('a', a);
+		let unformattedCredentials = data.getAssociatedHeadersAndValues(Object.keys(data.headers)); 
+		let formattedCredentials = templateCredentials(unformattedCredentials);
+		console.log(formattedCredentials);
 	});
 }
 
 function templateCredentials(credentialData) {
-	const {'User name' : userName } = credentialData; 
-	console.log('userName', userName);
+	const { 'User name' : userName, 'Access key ID': accessKeyId, 'Secret access key': secretAccessKey } = credentialData; 
+	// console.log('userName', userName);
+	const templatedOutput = `[${userName}]\naws_secret_key_id = ${accessKeyId}\naws_secret_access_key = ${secretAccessKey}`;
+	return templatedOutput;
 }
 
 // [username]\n
