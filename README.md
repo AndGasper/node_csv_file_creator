@@ -1,4 +1,6 @@
-# Node CSV File Creator
+# Node CSV File Utility
+
+## Read data from a CSV file and template the output as needed.
 
 ## Killing a process in git bash
 If the tail command hangs, and you're on Windows and `kill **PID**` doesn't want to work:
