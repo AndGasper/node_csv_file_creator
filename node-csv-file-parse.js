@@ -13,67 +13,85 @@ fs.open(inputFilePath, 'r', (error, fileDescriptor) => {
 		throw error;
 	}
 
-	// De way is to try first and catch the error
-	readFileData(inputFilePath, fileDescriptor); 
+	// Read the data from the file asynchronously 
+	(async function() {
+		try {
+			var result =  await readFileData(inputFilePath, fileDescriptor);
+			console.log('result', result);
+		} catch(error) {
+			console.log('error inside of aync block', error); 
+		}
+	})();
+	
 });
 
+
+
 function readFileData(filePath, fileDescriptor) {
-	// So it doesn't just return the buffer
-	const fileReadOptions = {
-		encoding: 'utf8',
-		flags: 'r'
+	// Wrap the entire function in a promise so the data available when the 'end' method is fired can be resolved 
+	return new Promise((resolve, reject) => {
+		const options = {
+			flags: 'r',
+			encoding: 'utf8',
+			fd: fileDescriptor,
+			mode: 0o666,
+			autoClose: true
+		};
+		let encoding = 'utf8';
+		const fileStream = fs.createReadStream(filePath, options); // God, I hope fileStream isn't a reserved word
+		// fileStream.setEncoding(encoding);
+		// the value of the header key is the index it was found in
+		// ASSUMPTION: A file only has one set of headers
+		// But, potentially, many sets of values
+		// Mostly because I can't figure out getters/setters at the moment using function CsvFileData() notation
+		const data = Object.assign(CsvFileData); 
+		function onDataChunk(chunk) {
+			// WARNING: Pretty sure it's just happenstance that 1 chunk = both lines of the file 
+			let rawChunk = chunk;
+			//  ASSUME: trimming a trailing carriage return is okay
+			let carriageReturnTrimmedChunk = rawChunk.trim('\r\n'); 
+			let line = carriageReturnTrimmedChunk.split('\r\n');
+			// console.log('line', line);
+			line.map((item, index) => {
+				// item = Un-separated list
+				// console.log(item);
+				let value = item.split(','); 
+				// Breaking the chunk at the \r\n, for it's current usage, pretty much makes the index = the line number
+				// if the index is 0 -> then it's the file headers
+				if (index === 0) {
+					// Set the file header values
+					value.map((headerValue, index) => {
+						data.headers.setHeaderKeyAndIndex = { headerKey: headerValue, headerIndex: index }; 
+					});
+				} else {
+					// set the file values 
+					value.map((itemValue, index) => {
+						return data.values.setFormattedValuesAndIndex = { index: index, dataValue: itemValue }; 
+					});
+				}
+			});
+		}
 
-	};
-	console.log('filePath', filePath);
-	const options = {
-		flags: 'r',
-		encoding: 'utf8',
-		fd: fileDescriptor,
-		mode: 0o666,
-		autoClose: true
-	};
-	let encoding = 'utf8';
-	const fileStream = fs.createReadStream(filePath, options); // God, I hope fileStream isn't a reserved word
-	// fileStream.setEncoding(encoding);
-	// the value of the header key is the index it was found in
-	// ASSUMPTION: A file only has one set of headers
-	// But potentially, many sets of values
-
-	const data = Object.assign(CsvFileData); // Mostly because I can't figure out getters/setters at the moment using function CsvFileData() notation
-
-	fileStream.on('data', (chunk) => {
-		// WARNING: Pretty sure it's just happenstance that 1 chunk = both lines of the file 
-		let rawChunk = chunk;
-		//  ASSUME: trimming a trailing carriage return is okay
-		let carriageReturnTrimmedChunk = rawChunk.trim('\r\n'); 
-		let line = carriageReturnTrimmedChunk.split('\r\n');
-		// console.log('line', line);
-		line.map((item, index) => {
-			// item = Un-separated list
-			// console.log(item);
-			let value = item.split(','); 
-			// Breaking the chunk at the \r\n, for it's current usage, pretty much makes the index = the line number
-			if (index === 0) {
-				value.map((headerValue, index) => {
-					data.headers.setHeaderKeyAndIndex = { headerKey: headerValue, headerIndex: index }; 
-				});	
-			} else {
-				value.map((itemValue, index) => {
-					return data.values.setFormattedValuesAndIndex = { index: index, dataValue: itemValue }; 
-				});
-			}
-			
+		function onReadStreamEnd() {
+			// console.log('data', data);
+			// Wonky scope usage of data 
+			let unformattedCredentials = data.getAssociatedHeadersAndValues(Object.keys(data.headers)); 
+			let formattedCredentials = templateCredentials(unformattedCredentials);
+			// console.log(formattedCredentials);
+			data.credentials = formattedCredentials;
+			// *INCREDIBLY* WONKY SCOPE
+			return data;
+		}
+		// Attach file stream event handlers
+		fileStream.on('data', onDataChunk);
+		// This method should return an array of promises 
+		fileStream.on('end', function() {
+			resolve(onReadStreamEnd());
 		});
-	});
 
-	fileStream.on('end', function() {
-		// console.log('data', data);
-		console.log('end'); 
-		let unformattedCredentials = data.getAssociatedHeadersAndValues(Object.keys(data.headers)); 
-		let formattedCredentials = templateCredentials(unformattedCredentials);
-		console.log(formattedCredentials);
 	});
 }
+	
 
 function templateCredentials(credentialData) {
 	const { 'User name' : userName, 'Access key ID': accessKeyId, 'Secret access key': secretAccessKey } = credentialData; 
@@ -113,4 +131,4 @@ const CsvFileData = {
 			});
 			return headerKeyValuePairs;
 		}
-	};
+};
